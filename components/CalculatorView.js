@@ -6,6 +6,7 @@ import Button from "@/components/Button";
 import Card from "@/components/Card";
 import CostBreakdown from "@/components/CostBreakdown";
 import EmptyState from "@/components/EmptyState";
+import ElectricityProfileSelect from "@/components/ElectricityProfileSelect";
 import PageHeader from "@/components/PageHeader";
 import PriceSummary from "@/components/PriceSummary";
 import SeedButton from "@/components/SeedButton";
@@ -13,11 +14,20 @@ import Select from "@/components/Select";
 import { quotePiece } from "@/lib/calculations";
 import { formatEuro, formatGrams, formatHours, formatRate } from "@/lib/format";
 
-export default function CalculatorView({ pieces, settings, printers }) {
+export default function CalculatorView({ pieces, settings, printers, electricityProfiles = [] }) {
   const router = useRouter();
   const [pieceId, setPieceId] = useState(pieces[0]?.id || "");
+  const [profileId, setProfileId] = useState(settings.electricityProfileId || "");
+  const selectedProfile =
+    electricityProfiles.find((profile) => profile.id === profileId) ||
+    electricityProfiles.find((profile) => profile.isDefault) ||
+    null;
+  const electricityPrice = selectedProfile?.pricePerKwh ?? settings.electricityPrice;
+  const electricityLabel = selectedProfile?.name || settings.electricityProfileName || "";
   const selected = pieces.find((piece) => piece.id === pieceId) || pieces[0] || null;
-  const quote = selected ? quotePiece({ piece: selected, settings, printers }) : null;
+  const quote = selected
+    ? quotePiece({ piece: selected, settings, printers, electricityPrice })
+    : null;
 
   useEffect(() => {
     function onFocus() {
@@ -31,7 +41,7 @@ export default function CalculatorView({ pieces, settings, printers }) {
     <div>
       <PageHeader
         title="Calculadora"
-        description="Escolha uma peça. O preço é recalculado com a eletricidade, a mão de obra, a máquina e a margem guardadas."
+        description="Escolha a peça e a casa. O preço da eletricidade muda o custo e o valor de venda."
         action={
           <Button href="/configuracoes" variant="secondary">
             Configurações
@@ -53,13 +63,21 @@ export default function CalculatorView({ pieces, settings, printers }) {
       ) : (
         <div className="grid gap-4 lg:grid-cols-5">
           <Card className="lg:col-span-2">
-            <Select
-              label="Peça"
-              name="piece"
-              value={selected?.id || ""}
-              onChange={(event) => setPieceId(event.target.value)}
-              options={pieces.map((piece) => ({ value: piece.id, label: piece.name }))}
-            />
+            <div className="space-y-4">
+              <ElectricityProfileSelect
+                profiles={electricityProfiles}
+                onChange={(profile) => {
+                  if (profile) setProfileId(profile.id);
+                }}
+              />
+              <Select
+                label="Peça"
+                name="piece"
+                value={selected?.id || ""}
+                onChange={(event) => setPieceId(event.target.value)}
+                options={pieces.map((piece) => ({ value: piece.id, label: piece.name }))}
+              />
+            </div>
             {selected ? (
               <dl className="mt-5 space-y-3 text-sm">
                 <div>
@@ -68,7 +86,7 @@ export default function CalculatorView({ pieces, settings, printers }) {
                 </div>
                 <div className="flex gap-6">
                   <div>
-                    <dt className="text-muted">Impressão</dt>
+                    <dt className="text-muted">Impressão total</dt>
                     <dd className="font-medium text-ink">{formatHours(selected.printHours)}</dd>
                   </div>
                   <div>
@@ -77,12 +95,24 @@ export default function CalculatorView({ pieces, settings, printers }) {
                   </div>
                 </div>
                 <div>
-                  <dt className="text-muted">Filamentos</dt>
-                  <dd className="mt-1 space-y-1">
-                    {selected.filaments.map((line) => (
-                      <p key={line.id} className="text-ink">
-                        {line.material} {line.color} · {formatGrams(line.grams)}
-                      </p>
+                  <dt className="text-muted">Plates</dt>
+                  <dd className="mt-2 space-y-3">
+                    {(selected.plates?.length
+                      ? selected.plates
+                      : [{ id: "single", printHours: selected.printHours, filaments: selected.filaments }]
+                    ).map((plate, index) => (
+                      <div key={plate.id || index}>
+                        <p className="text-xs font-medium text-muted">
+                          Plate {index + 1} · {formatHours(plate.printHours)}
+                        </p>
+                        <div className="mt-1 space-y-1">
+                          {plate.filaments.map((line) => (
+                            <p key={line.id} className="text-ink">
+                              {line.material} {line.color} · {formatGrams(line.grams)}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </dd>
                 </div>
@@ -90,8 +120,8 @@ export default function CalculatorView({ pieces, settings, printers }) {
             ) : null}
             {quote ? (
               <p className="mt-5 text-xs leading-5 text-muted">
-                Eletricidade com {formatRate(quote.rates.averagePower)} kW × {formatRate(settings.electricityPrice)} €/kWh.
-                Máquina {formatEuro(quote.rates.machineCost)}/h. Mão de obra {formatEuro(settings.laborCost)}/h.
+                Eletricidade{electricityLabel ? ` (${electricityLabel})` : ""} e desgaste da máquina usam a soma do tempo de todas as plates ({formatRate(quote.rates.averagePower)} kW × {formatRate(electricityPrice)} €/kWh, máquina {formatEuro(quote.rates.machineCost)}/h).
+                Mão de obra {formatEuro(settings.laborCost)}/h e embalagem contam uma vez.
               </p>
             ) : null}
           </Card>

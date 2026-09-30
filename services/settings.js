@@ -1,5 +1,5 @@
 import { DEFAULTS } from "@/lib/constants";
-import { mapPrinter, mapSettings } from "@/services/mappers";
+import { mapElectricityProfile, mapPrinter, mapSettings } from "@/services/mappers";
 
 async function requireUserId(supabase) {
   const { data, error } = await supabase.auth.getUser();
@@ -43,6 +43,30 @@ export async function ensureDefaults(supabase, userId) {
     });
     if (error && error.code !== "23505") throw error;
   }
+
+  const { data: electricityProfiles, error: electricityError } = await supabase
+    .from("electricity_profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .limit(1);
+
+  if (electricityError) throw electricityError;
+
+  if (!electricityProfiles?.length) {
+    const { data: currentSettings } = await supabase
+      .from("settings")
+      .select("electricity_price")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const { error } = await supabase.from("electricity_profiles").insert({
+      user_id: userId,
+      name: "Casa",
+      price_per_kwh: currentSettings?.electricity_price ?? DEFAULTS.electricityPrice,
+      is_default: true,
+    });
+    if (error && error.code !== "23505") throw error;
+  }
 }
 
 export async function getSettings(supabase) {
@@ -70,7 +94,6 @@ export async function saveSettings(supabase, values) {
   const { data, error } = await supabase
     .from("settings")
     .update({
-      electricity_price: values.electricityPrice,
       labor_cost: values.laborCost,
       machine_cost: values.machineCost,
       default_margin: values.defaultMargin,
@@ -121,4 +144,113 @@ export async function deletePrinter(supabase, printer) {
   }
   const { error } = await supabase.from("printers").delete().eq("id", printer.id);
   if (error) throw error;
+}
+
+export async function listElectricityProfiles(supabase) {
+  const { data, error } = await supabase
+    .from("electricity_profiles")
+    .select("*")
+    .order("is_default", { ascending: false })
+    .order("name", { ascending: true });
+
+  if (error) throw error;
+  return (data || []).map(mapElectricityProfile);
+}
+
+export function activeElectricityProfile(profiles) {
+  return profiles.find((profile) => profile.isDefault) || profiles[0] || null;
+}
+
+async function syncElectricityPrice(supabase, userId, pricePerKwh) {
+  const { error } = await supabase
+    .from("settings")
+    .update({ electricity_price: pricePerKwh })
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
+export async function createElectricityProfile(supabase, values) {
+  const userId = await requireUserId(supabase);
+  const existing = await listElectricityProfiles(supabase);
+  const isDefault = existing.length === 0;
+
+  const { data, error } = await supabase
+    .from("electricity_profiles")
+    .insert({
+      user_id: userId,
+      name: values.name,
+      price_per_kwh: values.pricePerKwh,
+      is_default: isDefault,
+    })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  if (isDefault) await syncElectricityPrice(supabase, userId, values.pricePerKwh);
+  return mapElectricityProfile(data);
+}
+
+export async function updateElectricityProfile(supabase, id, values) {
+  const userId = await requireUserId(supabase);
+  const { data, error } = await supabase
+    .from("electricity_profiles")
+    .update({
+      name: values.name,
+      price_per_kwh: values.pricePerKwh,
+    })
+    .eq("id", id)
+    .eq("user_id", userId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  const profile = mapElectricityProfile(data);
+  if (profile.isDefault) await syncElectricityPrice(supabase, userId, profile.pricePerKwh);
+  return profile;
+}
+
+export async function setActiveElectricityProfile(supabase, id) {
+  const userId = await requireUserId(supabase);
+
+  const { error: clearError } = await supabase
+    .from("electricity_profiles")
+    .update({ is_default: false })
+    .eq("user_id", userId)
+    .eq("is_default", true);
+
+  if (clearError) throw clearError;
+
+  const { data, error } = await supabase
+    .from("electricity_profiles")
+    .update({ is_default: true })
+    .eq("id", id)
+    .eq("user_id", userId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  const profile = mapElectricityProfile(data);
+  await syncElectricityPrice(supabase, userId, profile.pricePerKwh);
+  return profile;
+}
+
+export async function deleteElectricityProfile(supabase, profile) {
+  const userId = await requireUserId(supabase);
+  const existing = await listElectricityProfiles(supabase);
+  if (existing.length <= 1) {
+    throw new Error("Tem de existir pelo menos um perfil de eletricidade.");
+  }
+
+  const { error } = await supabase
+    .from("electricity_profiles")
+    .delete()
+    .eq("id", profile.id)
+    .eq("user_id", userId);
+
+  if (error) throw error;
+
+  if (profile.isDefault) {
+    const replacement = existing.find((item) => item.id !== profile.id);
+    if (replacement) await setActiveElectricityProfile(supabase, replacement.id);
+  }
 }

@@ -8,5 +8,11 @@ export const metadata = { title: "Configurações" };
 export default async function SettingsPage() {
   const { data, error } = await loadAppDataSafely();
   if (error) return <QueryError error={error} />;
-  return <SettingsView settings={data.settings} printers={data.printers} />;
+  return (
+    <SettingsView
+      settings={data.settings}
+      printers={data.printers}
+      electricityProfiles={data.electricityProfiles}
+    />
+  );
 }

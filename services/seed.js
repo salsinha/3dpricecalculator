@@ -33,10 +33,14 @@ export async function loadExampleData(supabase) {
     await savePiece(supabase, {
       name: EXAMPLE_PIECE.name,
       printer: EXAMPLE_PIECE.printer,
-      printHours: EXAMPLE_PIECE.printHours,
       creationHours: EXAMPLE_PIECE.creationHours,
       packagingCost: EXAMPLE_PIECE.packagingCost,
-      filaments: lines,
+      plates: [
+        {
+          printHours: EXAMPLE_PIECE.printHours,
+          filaments: lines,
+        },
+      ],
     });
     added = true;
   }

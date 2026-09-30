@@ -9,5 +9,10 @@ export const metadata = { title: "Painel" };
 export default async function DashboardPage() {
   const { data, error } = await loadAppDataSafely();
   if (error) return <QueryError error={error} />;
-  return <DashboardView dashboard={buildDashboard(data)} />;
+  return (
+    <DashboardView
+      dashboard={buildDashboard(data)}
+      electricityProfiles={data.electricityProfiles}
+    />
+  );
 }

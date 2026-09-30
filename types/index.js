@@ -35,6 +35,15 @@
  * @property {number} creationHours
  * @property {number} packagingCost
  * @property {string} createdAt
+ * @property {PiecePlate[]} plates
+ * @property {PieceFilament[]} filaments
+ */
+
+/**
+ * @typedef {Object} PiecePlate
+ * @property {string} id
+ * @property {number} position
+ * @property {number} printHours
  * @property {PieceFilament[]} filaments
  */
 

@@ -13,6 +13,7 @@ export default async function CalculatorPage() {
       pieces={data.pieces}
       settings={data.settings}
       printers={data.printers}
+      electricityProfiles={data.electricityProfiles}
     />
   );
 }

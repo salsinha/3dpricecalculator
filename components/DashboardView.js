@@ -1,6 +1,7 @@
 import Badge from "@/components/Badge";
 import Card from "@/components/Card";
 import EmptyState from "@/components/EmptyState";
+import ElectricityProfileSelect from "@/components/ElectricityProfileSelect";
 import PageHeader from "@/components/PageHeader";
 import SeedButton from "@/components/SeedButton";
 import { Table, Td } from "@/components/Table";
@@ -15,7 +16,7 @@ function SummaryRow({ label, value }) {
   );
 }
 
-export default function DashboardView({ dashboard }) {
+export default function DashboardView({ dashboard, electricityProfiles = [] }) {
   const cards = [
     { label: "Peças", value: String(dashboard.pieceCount), hint: "Registadas na conta" },
     { label: "Filamentos", value: String(dashboard.filamentCount), hint: "No catálogo" },
@@ -23,7 +24,9 @@ export default function DashboardView({ dashboard }) {
     {
       label: "Preço médio",
       value: dashboard.averagePrice == null ? "—" : formatEuro(dashboard.averagePrice),
-      hint: "Preço recomendado",
+      hint: dashboard.electricityProfileName
+        ? `Com ${dashboard.electricityProfileName}`
+        : "Preço recomendado",
     },
   ];
 
@@ -34,6 +37,14 @@ export default function DashboardView({ dashboard }) {
         description="Resumo das peças, dos filamentos e dos preços de venda."
         action={<SeedButton />}
       />
+
+      {electricityProfiles.length ? (
+        <Card className="mb-4">
+          <div className="max-w-md">
+            <ElectricityProfileSelect profiles={electricityProfiles} />
+          </div>
+        </Card>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (

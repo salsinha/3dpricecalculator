@@ -24,34 +24,56 @@ export function mapFilament(row) {
   };
 }
 
+function mapFilamentLine(line) {
+  const filament = line.filaments || {};
+  const rollPrice = toNumber(filament.roll_price);
+  const rollWeight = toNumber(filament.roll_weight);
+  return {
+    id: line.id,
+    filamentId: line.filament_id,
+    grams: toNumber(line.grams),
+    brand: filament.brand || "",
+    material: filament.material || "",
+    color: filament.color || "",
+    pricePerKg:
+      filament.price_per_kg == null
+        ? pricePerKg(rollPrice, rollWeight)
+        : toNumber(filament.price_per_kg),
+  };
+}
+
 export function mapPiece(row) {
-  const lines = Array.isArray(row.piece_filaments) ? row.piece_filaments : [];
+  const plateRows = Array.isArray(row.piece_plates) ? [...row.piece_plates] : [];
+  plateRows.sort((left, right) => Number(left.position) - Number(right.position));
+
+  const plates = plateRows.map((plate) => ({
+    id: plate.id,
+    position: Number(plate.position) || 0,
+    printHours: toNumber(plate.print_hours),
+    filaments: (Array.isArray(plate.piece_filaments) ? plate.piece_filaments : []).map(mapFilamentLine),
+  }));
+
+  const fallbackLines = Array.isArray(row.piece_filaments)
+    ? row.piece_filaments.map(mapFilamentLine)
+    : [];
+  const filaments = plates.length
+    ? plates.flatMap((plate) => plate.filaments)
+    : fallbackLines;
+  const printHours = plates.length
+    ? plates.reduce((sum, plate) => sum + plate.printHours, 0)
+    : toNumber(row.print_hours);
+
   return {
     id: row.id,
     name: row.name,
     printer: row.printer,
-    printHours: toNumber(row.print_hours),
+    printHours,
     creationHours: toNumber(row.creation_hours),
     packagingCost: toNumber(row.packaging_cost),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    filaments: lines.map((line) => {
-      const filament = line.filaments || {};
-      const rollPrice = toNumber(filament.roll_price);
-      const rollWeight = toNumber(filament.roll_weight);
-      return {
-        id: line.id,
-        filamentId: line.filament_id,
-        grams: toNumber(line.grams),
-        brand: filament.brand || "",
-        material: filament.material || "",
-        color: filament.color || "",
-        pricePerKg:
-          filament.price_per_kg == null
-            ? pricePerKg(rollPrice, rollWeight)
-            : toNumber(filament.price_per_kg),
-      };
-    }),
+    plates,
+    filaments,
   };
 }
 
@@ -75,6 +97,15 @@ export function mapPrinter(row) {
     name: row.name,
     averagePower: toNumber(row.average_power),
     machineCost: row.machine_cost == null ? null : toNumber(row.machine_cost),
+    isDefault: Boolean(row.is_default),
+  };
+}
+
+export function mapElectricityProfile(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    pricePerKwh: toNumber(row.price_per_kwh),
     isDefault: Boolean(row.is_default),
   };
 }

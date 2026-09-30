@@ -12,13 +12,20 @@ import SeedButton from "@/components/SeedButton";
 import { useToast } from "@/components/Toast";
 import { toUserMessage } from "@/lib/errors";
 import { formatEuro, formatInputNumber, formatRate } from "@/lib/format";
-import { validatePrinter, validateSettings } from "@/lib/validation";
+import { validateElectricityProfile, validatePrinter, validateSettings } from "@/lib/validation";
 import { createClient } from "@/lib/supabase/client";
-import { createPrinter, deletePrinter, saveSettings } from "@/services/settings";
+import {
+  createElectricityProfile,
+  createPrinter,
+  deleteElectricityProfile,
+  deletePrinter,
+  saveSettings,
+  setActiveElectricityProfile,
+  updateElectricityProfile,
+} from "@/services/settings";
 
 function settingsForm(settings) {
   return {
-    electricityPrice: formatInputNumber(settings.electricityPrice),
     laborCost: formatInputNumber(settings.laborCost),
     machineCost: formatInputNumber(settings.machineCost),
     defaultMargin: formatInputNumber(settings.defaultMargin),
@@ -28,7 +35,7 @@ function settingsForm(settings) {
   };
 }
 
-export default function SettingsView({ settings, printers }) {
+export default function SettingsView({ settings, printers, electricityProfiles = [] }) {
   const router = useRouter();
   const toast = useToast();
   const [values, setValues] = useState(() => settingsForm(settings));
@@ -43,6 +50,12 @@ export default function SettingsView({ settings, printers }) {
   const [addingPrinter, setAddingPrinter] = useState(false);
   const [pendingPrinter, setPendingPrinter] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [profileForm, setProfileForm] = useState({ name: "", pricePerKwh: "" });
+  const [profileErrors, setProfileErrors] = useState({});
+  const [editingProfile, setEditingProfile] = useState(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [pendingProfile, setPendingProfile] = useState(null);
+  const [deletingProfile, setDeletingProfile] = useState(false);
 
   function update(field, value) {
     setValues((current) => ({ ...current, [field]: value }));
@@ -111,14 +124,6 @@ export default function SettingsView({ settings, printers }) {
         <Card>
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
-              label="Preço da eletricidade (€/kWh)"
-              name="electricityPrice"
-              inputMode="decimal"
-              value={values.electricityPrice}
-              onChange={(event) => update("electricityPrice", event.target.value)}
-              error={errors.electricityPrice}
-            />
-            <Input
               label="Custo de mão de obra (€/hora)"
               name="laborCost"
               inputMode="decimal"
@@ -176,6 +181,130 @@ export default function SettingsView({ settings, printers }) {
           </div>
         </Card>
       </form>
+
+      <Card className="mt-4">
+        <h2 className="text-base font-semibold text-ink">Perfis de eletricidade</h2>
+        <p className="mt-1 text-sm text-muted">
+          A impressora pode ser a mesma. O preço do kWh muda de casa para casa. O perfil em uso entra na calculadora, nas peças e no painel.
+        </p>
+        <div className="mt-4 divide-y divide-line">
+          {electricityProfiles.map((profile) => (
+            <div key={profile.id} className="flex items-center justify-between gap-3 py-3">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-medium text-ink">{profile.name}</p>
+                  {profile.isDefault ? <Badge tone="accent">Em uso</Badge> : null}
+                </div>
+                <p className="mt-1 text-xs text-muted">{formatRate(profile.pricePerKwh)} €/kWh</p>
+              </div>
+              <div className="flex shrink-0 gap-1">
+                {profile.isDefault ? null : (
+                  <Button
+                    variant="ghost"
+                    className="px-2 py-1"
+                    onClick={async () => {
+                      try {
+                        await setActiveElectricityProfile(createClient(), profile.id);
+                        toast.success(`${profile.name} está em uso nos cálculos.`);
+                        router.refresh();
+                      } catch (error) {
+                        toast.error(toUserMessage(error));
+                      }
+                    }}
+                  >
+                    Usar
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  className="px-2 py-1"
+                  onClick={() => {
+                    setEditingProfile(profile);
+                    setProfileForm({
+                      name: profile.name,
+                      pricePerKwh: formatInputNumber(profile.pricePerKwh),
+                    });
+                    setProfileErrors({});
+                  }}
+                >
+                  Editar
+                </Button>
+                {electricityProfiles.length > 1 ? (
+                  <Button variant="ghost" className="px-2 py-1" onClick={() => setPendingProfile(profile)}>
+                    Eliminar
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <form
+          onSubmit={async (event) => {
+            event.preventDefault();
+            const result = validateElectricityProfile(profileForm);
+            setProfileErrors(result.errors);
+            if (!result.ok) return;
+            setSavingProfile(true);
+            try {
+              const supabase = createClient();
+              if (editingProfile) {
+                await updateElectricityProfile(supabase, editingProfile.id, result.value);
+                toast.success("Perfil atualizado.");
+              } else {
+                await createElectricityProfile(supabase, result.value);
+                toast.success("Perfil adicionado.");
+              }
+              setEditingProfile(null);
+              setProfileForm({ name: "", pricePerKwh: "" });
+              router.refresh();
+            } catch (error) {
+              toast.error(toUserMessage(error));
+            } finally {
+              setSavingProfile(false);
+            }
+          }}
+          className="mt-4 grid gap-3 border-t border-line pt-4 sm:grid-cols-3"
+          noValidate
+        >
+          <Input
+            label="Nome"
+            name="profile-name"
+            value={profileForm.name}
+            onChange={(event) => setProfileForm((current) => ({ ...current, name: event.target.value }))}
+            error={profileErrors.name}
+            placeholder="Casa do sócio"
+          />
+          <Input
+            label="Preço (€/kWh)"
+            name="profile-price"
+            inputMode="decimal"
+            value={profileForm.pricePerKwh}
+            onChange={(event) =>
+              setProfileForm((current) => ({ ...current, pricePerKwh: event.target.value }))
+            }
+            error={profileErrors.pricePerKwh}
+            placeholder="0,18"
+          />
+          <div className="flex gap-2 sm:pt-7">
+            <Button type="submit" variant="secondary" loading={savingProfile} className="flex-1">
+              {editingProfile ? "Guardar perfil" : "Adicionar"}
+            </Button>
+            {editingProfile ? (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setEditingProfile(null);
+                  setProfileForm({ name: "", pricePerKwh: "" });
+                  setProfileErrors({});
+                }}
+              >
+                Cancelar
+              </Button>
+            ) : null}
+          </div>
+        </form>
+      </Card>
 
       <Card className="mt-4">
         <h2 className="text-base font-semibold text-ink">Impressoras</h2>
@@ -263,6 +392,31 @@ export default function SettingsView({ settings, printers }) {
         onClose={() => setPendingPrinter(null)}
         onConfirm={confirmDeletePrinter}
         loading={deleting}
+      />
+      <ConfirmDialog
+        open={Boolean(pendingProfile)}
+        title="Eliminar perfil"
+        message={
+          pendingProfile
+            ? `Eliminar ${pendingProfile.name}? Os cálculos deixam de usar este preço.`
+            : ""
+        }
+        onClose={() => setPendingProfile(null)}
+        onConfirm={async () => {
+          if (!pendingProfile) return;
+          setDeletingProfile(true);
+          try {
+            await deleteElectricityProfile(createClient(), pendingProfile);
+            toast.success("Perfil eliminado.");
+            setPendingProfile(null);
+            router.refresh();
+          } catch (error) {
+            toast.error(toUserMessage(error));
+          } finally {
+            setDeletingProfile(false);
+          }
+        }}
+        loading={deletingProfile}
       />
     </div>
   );

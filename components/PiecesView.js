@@ -8,6 +8,7 @@ import Button from "@/components/Button";
 import Card from "@/components/Card";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import EmptyState from "@/components/EmptyState";
+import ElectricityProfileSelect from "@/components/ElectricityProfileSelect";
 import Input from "@/components/Input";
 import Modal from "@/components/Modal";
 import PageHeader from "@/components/PageHeader";
@@ -17,11 +18,11 @@ import { Table, Td } from "@/components/Table";
 import { useToast } from "@/components/Toast";
 import { quotePiece } from "@/lib/calculations";
 import { toUserMessage } from "@/lib/errors";
-import { formatEuro, formatGrams, formatPercent, shortId } from "@/lib/format";
+import { formatEuro, formatGrams, formatHours, formatPercent } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
 import { deletePiece, savePiece } from "@/services/pieces";
 
-export default function PiecesView({ pieces, filaments, settings, printers }) {
+export default function PiecesView({ pieces, filaments, settings, printers, electricityProfiles = [] }) {
   const router = useRouter();
   const toast = useToast();
   const [query, setQuery] = useState("");
@@ -30,9 +31,19 @@ export default function PiecesView({ pieces, filaments, settings, printers }) {
   const [pendingDelete, setPendingDelete] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [profileId, setProfileId] = useState(settings.electricityProfileId || "");
+  const selectedProfile =
+    electricityProfiles.find((profile) => profile.id === profileId) ||
+    electricityProfiles.find((profile) => profile.isDefault) ||
+    null;
+  const electricityPrice = selectedProfile?.pricePerKwh ?? settings.electricityPrice;
+  const pricedSettings = { ...settings, electricityPrice };
 
   const rows = pieces
-    .map((piece) => ({ piece, ...quotePiece({ piece, settings, printers }) }))
+    .map((piece) => ({
+      piece,
+      ...quotePiece({ piece, settings: pricedSettings, printers, electricityPrice }),
+    }))
     .filter((item) => {
       const haystack = `${item.piece.name} ${item.piece.printer}`.toLowerCase();
       return haystack.includes(query.trim().toLowerCase());
@@ -103,20 +114,28 @@ export default function PiecesView({ pieces, filaments, settings, printers }) {
         </Card>
       ) : (
         <Card className="mb-4">
-          <Input
-            label="Pesquisar"
-            name="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Nome ou impressora"
-          />
+          <div className="grid gap-4 md:grid-cols-2">
+            <ElectricityProfileSelect
+              profiles={electricityProfiles}
+              onChange={(profile) => {
+                if (profile) setProfileId(profile.id);
+              }}
+            />
+            <Input
+              label="Pesquisar"
+              name="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Nome ou impressora"
+            />
+          </div>
         </Card>
       )}
 
       {pieces.length === 0 ? (
         <EmptyState
           title="Sem peças"
-          description="Registe uma peça com o tempo de impressão, o trabalho e os filamentos usados."
+          description="Registe uma peça com as plates, o tempo de cada uma e os filamentos usados."
           action={<SeedButton />}
         />
       ) : rows.length === 0 ? (
@@ -138,15 +157,30 @@ export default function PiecesView({ pieces, filaments, settings, printers }) {
               <tr key={item.piece.id} className="hover:bg-orange-50/40">
                 <Td>
                   <p className="font-medium">{item.piece.name}</p>
-                  <p className="text-xs text-muted">{shortId(item.piece.id)}</p>
+                  <p className="text-xs text-muted">
+                    {(item.piece.plates?.length || 1) === 1
+                      ? "1 plate"
+                      : `${item.piece.plates.length} plates`}{" "}
+                    · {formatHours(item.piece.printHours)}
+                  </p>
                 </Td>
                 <Td>{item.piece.printer}</Td>
                 <Td>
-                  <div className="space-y-1">
-                    {item.piece.filaments.map((line) => (
-                      <p key={line.id} className="text-xs text-muted">
-                        {line.material} {line.color} · {formatGrams(line.grams)}
-                      </p>
+                  <div className="space-y-2">
+                    {(item.piece.plates?.length
+                      ? item.piece.plates
+                      : [{ id: "single", filaments: item.piece.filaments }]
+                    ).map((plate, index) => (
+                      <div key={plate.id || index}>
+                        {item.piece.plates?.length > 1 ? (
+                          <p className="text-xs font-medium text-ink">Plate {index + 1}</p>
+                        ) : null}
+                        {plate.filaments.map((line) => (
+                          <p key={line.id} className="text-xs text-muted">
+                            {line.material} {line.color} · {formatGrams(line.grams)}
+                          </p>
+                        ))}
+                      </div>
                     ))}
                   </div>
                 </Td>
@@ -199,7 +233,7 @@ export default function PiecesView({ pieces, filaments, settings, printers }) {
             key={editing?.id || "new"}
             initial={editing}
             filaments={filaments}
-            settings={settings}
+            settings={pricedSettings}
             printers={printers}
             onSubmit={handleSave}
             onClose={closeModal}

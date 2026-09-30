@@ -22,7 +22,12 @@ No **SQL Editor** do Supabase, abra e execute o ficheiro:
 
 `supabase/migrations/001_init.sql`
 
-Isto cria `profiles`, `settings`, `printers`, `filaments`, `pieces` e `piece_filaments`, a função `save_piece`, o trigger de conta nova e as políticas de RLS. Cada utilizador só vê e altera os seus dados.
+Isto cria `profiles`, `settings`, `printers`, `filaments`, `pieces`, `piece_plates` e `piece_filaments`, a função `save_piece`, o trigger de conta nova e as políticas de RLS. Cada utilizador só vê e altera os seus dados.
+
+Se a base já foi criada com uma versão anterior, execute também, por esta ordem:
+
+- `supabase/migrations/002_electricity_profiles.sql`
+- `supabase/migrations/003_piece_plates.sql`
 
 Os dados de exemplo (PLA branco, preto e vermelho, e a peça Suporte de comandos) carregam-se dentro da aplicação, em Configurações ou no painel vazio, com **Carregar dados de exemplo**. Não substituem dados já existentes.
 
