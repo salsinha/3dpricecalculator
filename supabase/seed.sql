@@ -1,0 +1,21 @@
+-- Dados de exemplo opcionais.
+-- A forma mais simples é entrar na aplicação e usar "Carregar dados de exemplo".
+-- Esse botão cria, na conta autenticada:
+--
+-- Bambu Lab / PLA / Branco / 16,99 € / 1000 g
+-- Bambu Lab / PLA / Preto / 16,99 € / 1000 g
+-- Bambu Lab / PLA / Vermelho / 19,99 € / 1000 g
+--
+-- Peça "Suporte de comandos"
+-- Impressora Bambu Lab A1 Mini
+-- 5 h de impressão, 0,75 h de criação, 0,50 € de embalagem
+-- 80 g de PLA Branco e 20 g de PLA Vermelho
+--
+-- Se preferir SQL, substitua USER_ID pelo uuid do utilizador em auth.users
+-- e execute apenas depois da migration.
+
+-- insert into public.filaments (user_id, brand, material, color, roll_price, roll_weight)
+-- values
+--   ('USER_ID', 'Bambu Lab', 'PLA', 'Branco', 16.99, 1000),
+--   ('USER_ID', 'Bambu Lab', 'PLA', 'Preto', 16.99, 1000),
+--   ('USER_ID', 'Bambu Lab', 'PLA', 'Vermelho', 19.99, 1000);

@@ -1,0 +1,16 @@
+@theme {
+  --color-ink: #161616;
+  --color-sidebar: #101010;
+  --color-paper: #f4f3f1;
+  --color-card: #ffffff;
+  --color-line: #e6e4e0;
+  --color-muted: #6d6862;
+  --color-accent: #f15a22;
+  --color-accent-dark: #d44712;
+  --font-sans: var(--font-geist-sans);
+}
+
+::selection {
+  background: #f15a22;
+  color: #ffffff;
+}
