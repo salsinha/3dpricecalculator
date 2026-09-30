@@ -22,6 +22,29 @@ import { formatEuro, formatGrams, formatHours, formatPercent } from "@/lib/forma
 import { createClient } from "@/lib/supabase/client";
 import { deletePiece, savePiece } from "@/services/pieces";
 
+function PlateLines({ piece }) {
+  const plates = piece.plates?.length
+    ? piece.plates
+    : [{ id: "single", filaments: piece.filaments }];
+
+  return (
+    <div className="space-y-2">
+      {plates.map((plate, index) => (
+        <div key={plate.id || index}>
+          {piece.plates?.length > 1 ? (
+            <p className="text-xs font-medium text-ink">Plate {index + 1}</p>
+          ) : null}
+          {plate.filaments.map((line) => (
+            <p key={line.id} className="text-xs text-muted">
+              {line.material} {line.color} · {formatGrams(line.grams)}
+            </p>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function PiecesView({ pieces, filaments, settings, printers, electricityProfiles = [] }) {
   const router = useRouter();
   const toast = useToast();
@@ -141,7 +164,68 @@ export default function PiecesView({ pieces, filaments, settings, printers, elec
       ) : rows.length === 0 ? (
         <EmptyState title="Sem resultados" description="Nenhuma peça corresponde à pesquisa." />
       ) : (
-        <Card padded={false}>
+        <>
+          <Card padded={false} className="lg:hidden">
+            <ul className="divide-y divide-line">
+              {rows.map((item) => (
+                <li key={item.piece.id} className="space-y-3 p-4">
+                  <div>
+                    <p className="font-medium text-ink">{item.piece.name}</p>
+                    <p className="mt-1 text-xs text-muted">
+                      {(item.piece.plates?.length || 1) === 1
+                        ? "1 plate"
+                        : `${item.piece.plates.length} plates`}{" "}
+                      · {formatHours(item.piece.printHours)} · {item.piece.printer}
+                    </p>
+                  </div>
+                  <PlateLines piece={item.piece} />
+                  <div className="grid grid-cols-3 gap-2 rounded-xl bg-paper px-3 py-2 text-center">
+                    <div>
+                      <p className="text-[11px] text-muted">Custo</p>
+                      <p className="text-sm font-medium tabular-nums">{formatEuro(item.costs.total)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-muted">Preço</p>
+                      <p className="text-sm font-semibold text-accent tabular-nums">
+                        {formatEuro(item.pricing.price)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-muted">Margem</p>
+                      <p className="text-sm font-medium tabular-nums">
+                        {formatPercent(
+                          item.pricing.minimumApplied
+                            ? item.pricing.effectiveMargin
+                            : item.pricing.marginPercent,
+                        )}
+                      </p>
+                      {item.pricing.minimumApplied ? (
+                        <Badge tone="warning" className="mt-1">
+                          Mínimo
+                        </Badge>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="secondary"
+                      className="w-full"
+                      onClick={() => {
+                        setEditing(item.piece);
+                        setOpen(true);
+                      }}
+                    >
+                      Editar
+                    </Button>
+                    <Button variant="ghost" className="w-full" onClick={() => setPendingDelete(item.piece)}>
+                      Eliminar
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
+          <Card padded={false} className="hidden lg:block">
           <Table
             columns={[
               { key: "name", label: "Peça" },
@@ -166,23 +250,7 @@ export default function PiecesView({ pieces, filaments, settings, printers, elec
                 </Td>
                 <Td>{item.piece.printer}</Td>
                 <Td>
-                  <div className="space-y-2">
-                    {(item.piece.plates?.length
-                      ? item.piece.plates
-                      : [{ id: "single", filaments: item.piece.filaments }]
-                    ).map((plate, index) => (
-                      <div key={plate.id || index}>
-                        {item.piece.plates?.length > 1 ? (
-                          <p className="text-xs font-medium text-ink">Plate {index + 1}</p>
-                        ) : null}
-                        {plate.filaments.map((line) => (
-                          <p key={line.id} className="text-xs text-muted">
-                            {line.material} {line.color} · {formatGrams(line.grams)}
-                          </p>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
+                  <PlateLines piece={item.piece} />
                 </Td>
                 <Td align="right">{formatEuro(item.costs.total)}</Td>
                 <Td align="right" className="font-semibold text-accent">
@@ -218,7 +286,8 @@ export default function PiecesView({ pieces, filaments, settings, printers, elec
               </tr>
             ))}
           </Table>
-        </Card>
+          </Card>
+        </>
       )}
 
       <Modal

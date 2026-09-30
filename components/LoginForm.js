@@ -40,9 +40,9 @@ export default function LoginForm() {
 
   return (
     <main className="grid min-h-screen lg:grid-cols-2">
-      <section className="flex flex-col gap-8 bg-sidebar px-6 py-8 text-white lg:min-h-screen lg:justify-between lg:gap-0 lg:px-12 lg:py-12">
+      <section className="flex flex-col gap-6 bg-sidebar px-5 py-6 text-white sm:gap-8 sm:px-6 sm:py-8 lg:min-h-screen lg:justify-between lg:gap-0 lg:px-12 lg:py-12">
         <div className="flex items-center gap-4">
-          <Logo className="h-28 w-auto" />
+          <Logo className="h-16 w-auto sm:h-28" />
           <div>
             <p className="text-sm font-semibold">3D J.A.</p>
             <p className="text-xs tracking-wide text-white/55 uppercase">Create & Print Studio</p>
@@ -50,7 +50,7 @@ export default function LoginForm() {
         </div>
         <div className="max-w-md lg:mt-10">
           <p className="text-sm font-medium text-accent">Price Calculator</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-4xl">
             Preços de peças impressas em 3D
           </h1>
           <p className="mt-4 text-sm leading-6 text-white/65">
@@ -60,7 +60,7 @@ export default function LoginForm() {
         <p className="text-xs text-white/40 lg:mt-10">Acesso reservado à equipa.</p>
       </section>
 
-      <section className="flex items-center justify-center bg-paper px-6 py-12">
+      <section className="flex items-center justify-center bg-paper px-5 py-8 sm:px-6 sm:py-12">
         <div className="w-full max-w-sm">
           <h2 className="text-2xl font-semibold text-ink">Entrar</h2>
           <p className="mt-2 text-sm text-muted">Utilize a conta criada no Supabase.</p>

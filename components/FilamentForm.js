@@ -99,10 +99,10 @@ export default function FilamentForm({ initial, onSubmit, onClose, submitting = 
         </p>
       </div>
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button variant="secondary" onClick={onClose} disabled={submitting}>
+        <Button variant="secondary" className="w-full sm:w-auto" onClick={onClose} disabled={submitting}>
           Cancelar
         </Button>
-        <Button type="submit" loading={submitting}>
+        <Button type="submit" className="w-full sm:w-auto" loading={submitting}>
           Guardar
         </Button>
       </div>

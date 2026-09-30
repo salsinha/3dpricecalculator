@@ -42,19 +42,19 @@ export default function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className={`relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:rounded-2xl ${
+        className={`relative flex max-h-[100dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:max-h-[92vh] sm:rounded-2xl ${
           wide ? "sm:max-w-3xl" : "sm:max-w-lg"
         }`}
       >
-        <div className="border-b border-line px-5 py-4">
+        <div className="border-b border-line px-4 py-4 sm:px-5">
           <h2 id="modal-title" className="text-lg font-semibold text-ink">
             {title}
           </h2>
           {description ? <p className="mt-1 text-sm text-muted">{description}</p> : null}
         </div>
-        <div className="overflow-y-auto px-5 py-4">{children}</div>
+        <div className="overflow-y-auto px-4 py-4 sm:px-5">{children}</div>
         {footer ? (
-          <div className="flex flex-col-reverse gap-2 border-t border-line px-5 py-4 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-2 border-t border-line px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:px-5 sm:pb-4 [&_button]:w-full sm:[&_button]:w-auto">
             {footer}
           </div>
         ) : null}

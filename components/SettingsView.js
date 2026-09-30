@@ -174,8 +174,8 @@ export default function SettingsView({ settings, printers, electricityProfiles =
               />
             </div>
           </div>
-          <div className="mt-5 flex justify-end">
-            <Button type="submit" loading={saving}>
+          <div className="mt-5 sm:flex sm:justify-end">
+            <Button type="submit" loading={saving} className="w-full sm:w-auto">
               Guardar configurações
             </Button>
           </div>
@@ -189,19 +189,19 @@ export default function SettingsView({ settings, printers, electricityProfiles =
         </p>
         <div className="mt-4 divide-y divide-line">
           {electricityProfiles.map((profile) => (
-            <div key={profile.id} className="flex items-center justify-between gap-3 py-3">
-              <div>
+            <div key={profile.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-medium text-ink">{profile.name}</p>
                   {profile.isDefault ? <Badge tone="accent">Em uso</Badge> : null}
                 </div>
                 <p className="mt-1 text-xs text-muted">{formatRate(profile.pricePerKwh)} €/kWh</p>
               </div>
-              <div className="flex shrink-0 gap-1">
+              <div className="flex flex-wrap gap-2">
                 {profile.isDefault ? null : (
                   <Button
                     variant="ghost"
-                    className="px-2 py-1"
+                    className="min-h-11 flex-1 px-3 py-2 sm:flex-none"
                     onClick={async () => {
                       try {
                         await setActiveElectricityProfile(createClient(), profile.id);
@@ -217,7 +217,7 @@ export default function SettingsView({ settings, printers, electricityProfiles =
                 )}
                 <Button
                   variant="ghost"
-                  className="px-2 py-1"
+                  className="min-h-11 flex-1 px-3 py-2 sm:flex-none"
                   onClick={() => {
                     setEditingProfile(profile);
                     setProfileForm({
@@ -230,7 +230,7 @@ export default function SettingsView({ settings, printers, electricityProfiles =
                   Editar
                 </Button>
                 {electricityProfiles.length > 1 ? (
-                  <Button variant="ghost" className="px-2 py-1" onClick={() => setPendingProfile(profile)}>
+                  <Button variant="ghost" className="min-h-11 flex-1 px-3 py-2 sm:flex-none" onClick={() => setPendingProfile(profile)}>
                     Eliminar
                   </Button>
                 ) : null}
@@ -313,7 +313,7 @@ export default function SettingsView({ settings, printers, electricityProfiles =
         </p>
         <div className="mt-4 divide-y divide-line">
           {printers.map((printer) => (
-            <div key={printer.id} className="flex items-center justify-between gap-3 py-3">
+            <div key={printer.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-medium text-ink">{printer.name}</p>
@@ -324,7 +324,7 @@ export default function SettingsView({ settings, printers, electricityProfiles =
                 </p>
               </div>
               {printer.isDefault ? null : (
-                <Button variant="ghost" className="px-2 py-1" onClick={() => setPendingPrinter(printer)}>
+                <Button variant="ghost" className="w-full px-3 py-2 sm:w-auto" onClick={() => setPendingPrinter(printer)}>
                   Eliminar
                 </Button>
               )}

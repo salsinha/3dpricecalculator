@@ -232,14 +232,14 @@ export default function PieceForm({
       </div>
 
       <div className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
             <h3 className="text-sm font-semibold text-ink">Plates</h3>
             <p className="text-xs text-muted">
               Cada plate tem o seu tempo. A eletricidade e o desgaste da máquina somam todas as plates. O mesmo filamento pode repetir-se.
             </p>
           </div>
-          <Button type="button" variant="secondary" onClick={addPlate}>
+          <Button type="button" variant="secondary" onClick={addPlate} className="w-full shrink-0 sm:w-auto">
             Adicionar plate
           </Button>
         </div>
@@ -253,19 +253,19 @@ export default function PieceForm({
           const plateErrors = errors[`plate-${plateIndex}`] || {};
           return (
             <section key={plate.key} className="space-y-3 rounded-2xl border border-line p-4">
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center justify-between gap-3">
                 <h4 className="text-sm font-semibold text-ink">Plate {plateIndex + 1}</h4>
                 <Button
                   type="button"
                   variant="ghost"
-                  className="px-2 py-1"
+                  className="px-3 py-2"
                   onClick={() => removePlate(plate.key)}
                   disabled={values.plates.length === 1}
                 >
                   Remover plate
                 </Button>
               </div>
-              <div className="max-w-xs">
+              <div className="w-full sm:max-w-xs">
                 <Input
                   label="Tempo de impressão (horas)"
                   inputMode="decimal"
@@ -306,11 +306,12 @@ export default function PieceForm({
                       error={lineErrors.grams}
                       placeholder="80"
                     />
-                    <div className="sm:pt-7">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => removeLine(plate.key, line.key)}
+              <div className="sm:pt-7">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full sm:w-auto"
+                  onClick={() => removeLine(plate.key, line.key)}
                         disabled={plate.filaments.length === 1}
                       >
                         Remover
@@ -348,10 +349,10 @@ export default function PieceForm({
       )}
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button variant="secondary" onClick={onClose} disabled={submitting}>
+        <Button variant="secondary" className="w-full sm:w-auto" onClick={onClose} disabled={submitting}>
           Cancelar
         </Button>
-        <Button type="submit" loading={submitting} disabled={!filaments.length}>
+        <Button type="submit" className="w-full sm:w-auto" loading={submitting} disabled={!filaments.length}>
           Guardar
         </Button>
       </div>

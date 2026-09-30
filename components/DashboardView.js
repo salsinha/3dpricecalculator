@@ -9,9 +9,9 @@ import { formatEuro, formatGrams, formatPercent, shortId } from "@/lib/format";
 
 function SummaryRow({ label, value }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-line py-3 last:border-0">
+    <div className="flex flex-col gap-1 border-b border-line py-3 last:border-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
       <dt className="text-sm text-muted">{label}</dt>
-      <dd className="text-right text-sm font-medium text-ink">{value}</dd>
+      <dd className="text-sm font-medium break-words text-ink sm:text-right">{value}</dd>
     </div>
   );
 }
@@ -69,6 +69,39 @@ export default function DashboardView({ dashboard, electricityProfiles = [] }) {
             </div>
           ) : (
             <div className="mt-4">
+              <ul className="divide-y divide-line lg:hidden">
+                {dashboard.recent.map((item) => (
+                  <li key={item.piece.id} className="space-y-2 py-3">
+                    <div>
+                      <p className="font-medium text-ink">{item.piece.name}</p>
+                      <p className="text-xs text-muted">{item.piece.printer}</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <p className="text-[11px] text-muted">Custo</p>
+                        <p className="text-sm font-medium tabular-nums">{formatEuro(item.costs.total)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-muted">Preço</p>
+                        <p className="text-sm font-semibold text-accent tabular-nums">
+                          {formatEuro(item.pricing.price)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-muted">Margem</p>
+                        <p className="text-sm font-medium tabular-nums">
+                          {formatPercent(
+                            item.pricing.minimumApplied
+                              ? item.pricing.effectiveMargin
+                              : item.pricing.marginPercent,
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="hidden lg:block">
               <Table
                 columns={[
                   { key: "name", label: "Nome" },
@@ -102,6 +135,7 @@ export default function DashboardView({ dashboard, electricityProfiles = [] }) {
                   </tr>
                 ))}
               </Table>
+              </div>
             </div>
           )}
         </Card>

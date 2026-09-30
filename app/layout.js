@@ -6,6 +6,12 @@ const geist = Geist({
   subsets: ["latin"],
 });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export const metadata = {
   title: {
     default: "3D J.A. – Price Calculator",

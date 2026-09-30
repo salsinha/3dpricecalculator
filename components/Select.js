@@ -18,7 +18,7 @@ export default function Select({
       <select
         id={selectId}
         className={cx(
-          "w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20",
+          "w-full rounded-xl border bg-white px-3 py-3 text-base text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 sm:py-2.5 sm:text-sm",
           error ? "border-red-400" : "border-line",
           className,
         )}

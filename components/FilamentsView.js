@@ -155,7 +155,52 @@ export default function FilamentsView({ filaments }) {
       ) : filtered.length === 0 ? (
         <EmptyState title="Sem resultados" description="Nenhum filamento corresponde à pesquisa ou aos filtros." />
       ) : (
-        <Card padded={false}>
+        <>
+          <Card padded={false} className="lg:hidden">
+            <ul className="divide-y divide-line">
+              {filtered.map((filament) => (
+                <li key={filament.id} className="space-y-3 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium text-ink">{filament.brand}</p>
+                      <p className="text-sm text-muted">{filament.color}</p>
+                    </div>
+                    <Badge tone="accent">{filament.material}</Badge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 rounded-xl bg-paper px-3 py-2 text-center">
+                    <div>
+                      <p className="text-[11px] text-muted">Rolo</p>
+                      <p className="text-sm font-medium tabular-nums">{formatEuro(filament.rollPrice)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-muted">Peso</p>
+                      <p className="text-sm font-medium tabular-nums">{formatGrams(filament.rollWeight)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-muted">€/kg</p>
+                      <p className="text-sm font-semibold tabular-nums">{formatEuro(filament.pricePerKg)}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="secondary"
+                      className="w-full"
+                      onClick={() => {
+                        setEditing(filament);
+                        setOpen(true);
+                      }}
+                    >
+                      Editar
+                    </Button>
+                    <Button variant="ghost" className="w-full" onClick={() => setPendingDelete(filament)}>
+                      Eliminar
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
+          <Card padded={false} className="hidden lg:block">
           <Table
             columns={[
               { key: "id", label: "ID" },
@@ -201,7 +246,8 @@ export default function FilamentsView({ filaments }) {
               </tr>
             ))}
           </Table>
-        </Card>
+          </Card>
+        </>
       )}
 
       <Modal
